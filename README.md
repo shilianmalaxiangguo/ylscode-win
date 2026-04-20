@@ -1,13 +1,13 @@
 # yls-desktop-widget (MVP)
 
-## 开发启动
+## Development
 
 ```powershell
 npm install
 npm run dev
 ```
 
-## 测试与构建
+## Test and Build
 
 ```powershell
 npm test
@@ -15,27 +15,27 @@ npm run typecheck
 npm run build
 ```
 
-## 本次验证记录（2026-04-20）
+## Verification Log (2026-04-20)
 
-### 自动化命令
+### Automated checks
 
-| 命令 | 结果 | 备注 |
+| Command | Result | Notes |
 | --- | --- | --- |
-| `npm test` | ✅ 通过 | `9` 个测试文件、`52` 个用例全部通过 |
-| `npm run typecheck` | ✅ 通过 | 无类型错误输出 |
-| `npm run build` | ✅ 通过 | renderer + electron 均完成构建（含 plugin timings warning，不阻塞产物输出） |
+| `npm test` | PASS | 9 test files, 52 tests passed |
+| `npm run typecheck` | PASS | No type errors |
+| `npm run build` | PASS | Renderer and Electron build completed; plugin timings warning is non-blocking |
 
-### 人工 QA 清单
+### Manual QA checklist
 
-> 说明：本轮会话仅能执行命令行验证，无法直接进行可交互桌面窗口操作；以下人工项未标记通过，需在本机桌面会话补测。
+Note: this run only had CLI access. Interactive desktop window checks were not executable in-session, so items below are recorded as not manually verified yet.
 
-| 检查项 | 状态 | 记录 |
+| Check item | Status | Record |
 | --- | --- | --- |
-| 窗口大小形态（小挂件默认尺寸） | ⚠️ 未实测 | 需运行 `npm run dev` 后观察首屏窗口尺寸与形态 |
-| Token 保存（含重启后持久化） | ⚠️ 未实测 | 需在 UI 输入 Token、保存、重启应用后复核 |
-| USD 展示（剩余/当前/本周/套餐） | ⚠️ 未实测 | 自动化测试覆盖文案与渲染，仍需人工看 UI 实际展示 |
-| 轮询选项（5s/30s/60s/3min/5min/10min） | ⚠️ 未实测 | 需在设置区下拉项逐项检查 |
-| 默认 60s | ⚠️ 未实测 | 需启动后确认默认选中值 |
-| 刷新按钮 | ⚠️ 未实测 | 需点击“刷新”并观察即时拉取行为 |
-| 置顶开关 | ⚠️ 未实测 | 需切换“置顶/取消置顶”并验证窗口置顶状态 |
-| week 缺失占位 | ⚠️ 未实测 | 自动化测试覆盖缺失周数据场景，仍需人工看占位表现（`--`） |
+| Window size and widget shape | NOT VERIFIED | Run `npm run dev`, then check initial window size/shape |
+| Token save persistence (after restart) | NOT VERIFIED | Enter token, save, restart app, then confirm persistence |
+| USD display for cards | NOT VERIFIED | Manually confirm remaining/current/week/package values are shown in USD |
+| Polling options list | NOT VERIFIED | Confirm options include `5s`, `30s`, `60s`, `3min`, `5min`, `10min` |
+| Default polling value is `60s` | NOT VERIFIED | Confirm selected default after app startup |
+| Refresh button behavior | NOT VERIFIED | Click `Refresh` and confirm immediate fetch |
+| Always-on-top toggle | NOT VERIFIED | Toggle and confirm window topmost behavior |
+| Missing week data placeholder | NOT VERIFIED | Confirm week section shows `--` when week data is missing |
