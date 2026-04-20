@@ -46,7 +46,3 @@ export interface DashboardSnapshot {
   packageTotalUsd: number | null
   packageExpiresAt: string | null
 }
-
-export interface SnapshotMappingOptions {
-  referenceTimeMs?: number
-}

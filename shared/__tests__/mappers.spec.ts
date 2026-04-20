@@ -30,7 +30,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs })).toEqual({
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs)).toEqual({
       remainingUsd: 245000,
       current: {
         remainingUsd: 380,
@@ -60,7 +60,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs }).week).toBeNull()
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs).week).toBeNull()
   })
 
   it('falls back remainingUsd and picks package closest to reference time when no active package', () => {
@@ -83,7 +83,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs: customReferenceTimeMs })).toMatchObject({
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, customReferenceTimeMs)).toMatchObject({
       remainingUsd: 50,
       packageExpiresAt: '2030-12-28T00:00:00.000Z'
     })
@@ -103,7 +103,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs }).remainingUsd).toBe(77)
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs).remainingUsd).toBe(77)
   })
 
   it('clamps usedUsd to non-negative when remaining exceeds total', () => {
@@ -116,7 +116,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs }).current).toEqual({
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs).current).toEqual({
       remainingUsd: 120,
       usedUsd: 0,
       totalUsd: 100,
@@ -137,7 +137,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs }).packageExpiresAt).toBe('2026-04-21T00:00:00.000Z')
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs).packageExpiresAt).toBe('2026-04-21T00:00:00.000Z')
   })
 
   it('supports is_active alias as active package flag', () => {
@@ -152,7 +152,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    expect(mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs }).packageExpiresAt).toBe('2026-05-01T00:00:00.000Z')
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs).packageExpiresAt).toBe('2026-05-01T00:00:00.000Z')
   })
 
   it('does not read system time inside mapper', () => {
@@ -165,13 +165,30 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       }
     }
 
-    mapApiEnvelopeToDashboardSnapshot(envelope, { referenceTimeMs })
+    mapApiEnvelopeToDashboardSnapshot(envelope, referenceTimeMs)
     expect(nowSpy).not.toHaveBeenCalled()
     nowSpy.mockRestore()
   })
 
+  it('uses tie-break: prefer future when equally distant, then earlier time', () => {
+    const tieReferenceTimeMs = Date.parse('2026-04-20T00:00:00.000Z')
+    const envelope: APIEnvelope = {
+      state: {
+        package: {
+          packages: [
+            { package_status: 'expired', expires_at: '2026-04-19T00:00:00.000Z' },
+            { package_status: 'expired', expires_at: '2026-04-21T00:00:00.000Z' },
+            { package_status: 'expired', expires_at: '2026-04-21T12:00:00.000Z' }
+          ]
+        }
+      }
+    }
+
+    expect(mapApiEnvelopeToDashboardSnapshot(envelope, tieReferenceTimeMs).packageExpiresAt).toBe('2026-04-21T00:00:00.000Z')
+  })
+
   it('does not throw and returns null-heavy snapshot on missing fields', () => {
-    expect(mapApiEnvelopeToDashboardSnapshot({}, { referenceTimeMs })).toEqual({
+    expect(mapApiEnvelopeToDashboardSnapshot({}, referenceTimeMs)).toEqual({
       remainingUsd: null,
       current: null,
       week: null,

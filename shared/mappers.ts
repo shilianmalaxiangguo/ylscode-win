@@ -3,7 +3,6 @@ import type {
   DashboardSnapshot,
   NumberLike,
   PackageItem,
-  SnapshotMappingOptions,
   UsageCardSnapshot,
   UsagePayload
 } from './types'
@@ -122,10 +121,9 @@ const pickNearestExpiresAt = (
 
 export const mapApiEnvelopeToDashboardSnapshot = (
   envelope: APIEnvelope,
-  options?: SnapshotMappingOptions
+  referenceTimeMs: number
 ): DashboardSnapshot => {
   const state = envelope.state
-  const referenceTimeMs = toNumber(options?.referenceTimeMs)
 
   return {
     remainingUsd:
@@ -136,6 +134,6 @@ export const mapApiEnvelopeToDashboardSnapshot = (
     week: state?.userPackgeUsage_week ? toUsageCardSnapshot(state.userPackgeUsage_week) : null,
     email: state?.user?.email ?? null,
     packageTotalUsd: toNumber(state?.package?.total_quota),
-    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, referenceTimeMs)
+    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, toNumber(referenceTimeMs))
   }
 }
