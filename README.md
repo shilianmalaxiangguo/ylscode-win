@@ -35,6 +35,8 @@ Repository workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
 - `push` / `pull_request` to `main`: runs `npm ci`, `npm run typecheck`, `npm test`
 - Manual run (`workflow_dispatch`): runs verification first, then builds Windows packages on `windows-latest` and uploads artifacts
+- Tag release workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml)
+  Push `v*` tags to build Windows packages and publish a GitHub Release automatically
 
 Manual run steps on GitHub:
 
@@ -43,6 +45,19 @@ Manual run steps on GitHub:
 3. Select `CI`.
 4. Click `Run workflow`.
 5. After it finishes, download the artifact named `windows-package-<commit-sha>`.
+
+Release tag steps:
+
+1. Update `package.json` version and commit it.
+2. Create a tag that exactly matches the package version, for example `v0.1.1`.
+3. Push the tag:
+
+```powershell
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+The release workflow validates that `git tag` matches `package.json` version before packaging. If they do not match, the workflow fails instead of publishing the wrong artifact version.
 
 ## Verification Log (2026-04-20)
 
