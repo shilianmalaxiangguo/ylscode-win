@@ -45,7 +45,6 @@ export const useDashboard = () => {
   const invalidateInFlightRequests = () => {
     sessionId += 1
     latestRequestId = ++requestIdSeed
-    loading.value = false
   }
 
   const refresh = async (): Promise<boolean> => {
@@ -121,19 +120,18 @@ export const useDashboard = () => {
 
   const init = async () => {
     loading.value = true
+    invalidateInFlightRequests()
+    stopPolling()
     try {
       const settings = await window.ylsDesktop.getSettings()
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
-        invalidateInFlightRequests()
-        stopPolling()
         snapshot.value = null
         error.value = EMPTY_TOKEN_MESSAGE
         return
       }
 
-      invalidateInFlightRequests()
       const activeSession = sessionId
       await refresh()
       if (activeSession !== sessionId || !token.value.trim()) {
@@ -149,19 +147,18 @@ export const useDashboard = () => {
 
   const saveToken = async (nextToken: string) => {
     loading.value = true
+    invalidateInFlightRequests()
+    stopPolling()
     try {
       const settings = await window.ylsDesktop.saveToken(nextToken)
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
-        invalidateInFlightRequests()
-        stopPolling()
         snapshot.value = null
         error.value = EMPTY_TOKEN_MESSAGE
         return
       }
 
-      invalidateInFlightRequests()
       const activeSession = sessionId
       await refresh()
       if (activeSession !== sessionId || !token.value.trim()) {

@@ -313,4 +313,76 @@ describe('useDashboard', () => {
     expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(3)
     scope.stop()
   })
+
+  it('does not commit stale refresh while saveToken preload is still pending', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-race',
+      pollingMs: 60000,
+      alwaysOnTop: false
+    })
+
+    const staleSnapshot: DashboardSnapshot = {
+      ...snapshotFixture,
+      remainingUsd: 777
+    }
+
+    const oldRefreshResolverRef: { current: ((value: DashboardSnapshot) => void) | null } = {
+      current: null
+    }
+    const saveTokenResolverRef: {
+      current:
+        | ((value: { token: string; pollingMs: number; alwaysOnTop: boolean }) => void)
+        | null
+    } = {
+      current: null
+    }
+
+    bridge.fetchQuotaSnapshot
+      .mockResolvedValueOnce(snapshotFixture)
+      .mockImplementationOnce(
+        () =>
+          new Promise<DashboardSnapshot>(resolve => {
+            oldRefreshResolverRef.current = resolve
+          })
+      )
+      .mockResolvedValueOnce(snapshotFixture)
+
+    bridge.saveToken.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          saveTokenResolverRef.current = resolve
+        })
+    )
+
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+
+    await dashboard.init()
+    expect(dashboard.snapshot.value?.remainingUsd).toBe(12.5)
+
+    const oldRefreshPromise = dashboard.refresh()
+    await Promise.resolve()
+
+    const saveTokenPromise = dashboard.saveToken('next-token')
+    await Promise.resolve()
+
+    expect(oldRefreshResolverRef.current).not.toBeNull()
+    oldRefreshResolverRef.current!(staleSnapshot)
+    await oldRefreshPromise
+
+    expect(dashboard.snapshot.value?.remainingUsd).toBe(12.5)
+    expect(dashboard.loading.value).toBe(true)
+
+    expect(saveTokenResolverRef.current).not.toBeNull()
+    saveTokenResolverRef.current!({
+      token: 'next-token',
+      pollingMs: 60000,
+      alwaysOnTop: false
+    })
+    await saveTokenPromise
+
+    scope.stop()
+  })
 })
