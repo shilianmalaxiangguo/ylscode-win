@@ -1,8 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mapApiEnvelopeToDashboardSnapshot } from '../mappers'
 import type { APIEnvelope } from '../types'
 
 describe('mapApiEnvelopeToDashboardSnapshot', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-20T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('maps full payload and parses string numbers', () => {
     const envelope: APIEnvelope = {
       state: {
