@@ -37,7 +37,7 @@ const onChangeInterval = (event: Event) => {
 }
 
 function formatPollingLabel(ms: number): string {
-  if (ms < 60000) {
+  if (ms <= 60000) {
     return `${ms / 1000}s`
   }
   if (ms % 60000 === 0) {
