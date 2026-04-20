@@ -7,6 +7,8 @@ npm install
 npm run dev
 ```
 
+Manual verification requires a local desktop GUI session that can launch an Electron window (not headless/CLI-only).
+
 ## Test and Build
 
 ```powershell
@@ -16,6 +18,8 @@ npm run build
 ```
 
 ## Verification Log (2026-04-20)
+
+This verification log is bound to application code revision `1fa8cc0` (`fix: separate widget errors and settings busy state`). Later README-only edits must not be treated as a fresh product verification.
 
 ### Automated checks
 
@@ -27,7 +31,7 @@ npm run build
 
 ### Manual QA checklist
 
-Note: this run only had CLI access. Interactive desktop window checks were not executable in-session, so items below are recorded as not manually verified yet.
+Note: this run only had CLI access. Interactive checks require a local desktop GUI session with an Electron window, so items below are recorded as not manually verified yet.
 
 | Check item | Status | Record |
 | --- | --- | --- |
