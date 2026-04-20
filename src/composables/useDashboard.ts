@@ -23,33 +23,81 @@ export const useDashboard = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  let timer: ReturnType<typeof setInterval> | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let sessionId = 0
+  let requestIdSeed = 0
+  let latestRequestId = 0
+  let pollingActive = false
 
-  const stopPolling = () => {
+  const clearPollingTimer = () => {
     if (!timer) {
       return
     }
-    clearInterval(timer)
+    clearTimeout(timer)
     timer = null
   }
 
-  const refresh = async () => {
+  const stopPolling = () => {
+    pollingActive = false
+    clearPollingTimer()
+  }
+
+  const invalidateInFlightRequests = () => {
+    sessionId += 1
+    latestRequestId = ++requestIdSeed
+    loading.value = false
+  }
+
+  const refresh = async (): Promise<boolean> => {
     if (!token.value.trim()) {
       snapshot.value = null
       error.value = EMPTY_TOKEN_MESSAGE
-      return
+      loading.value = false
+      return false
     }
 
+    const requestId = ++requestIdSeed
+    const requestSessionId = sessionId
+    latestRequestId = requestId
     loading.value = true
     try {
       const next = await window.ylsDesktop.fetchQuotaSnapshot()
+      if (requestSessionId !== sessionId || requestId !== latestRequestId) {
+        return false
+      }
       snapshot.value = next
       error.value = null
+      return true
     } catch (err) {
+      if (requestSessionId !== sessionId || requestId !== latestRequestId) {
+        return false
+      }
       error.value = toErrorMessage(err)
+      return false
     } finally {
-      loading.value = false
+      if (requestSessionId === sessionId && requestId === latestRequestId) {
+        loading.value = false
+      }
     }
+  }
+
+  const scheduleNextPoll = (pollSessionId: number) => {
+    if (!pollingActive || pollSessionId !== sessionId || !token.value.trim()) {
+      return
+    }
+
+    clearPollingTimer()
+    timer = setTimeout(async () => {
+      timer = null
+      if (!pollingActive || pollSessionId !== sessionId || !token.value.trim()) {
+        return
+      }
+      await refresh()
+      if (!pollingActive || pollSessionId !== sessionId || !token.value.trim()) {
+        return
+      }
+      scheduleNextPoll(pollSessionId)
+    }, pollingMs.value)
   }
 
   const startPolling = () => {
@@ -57,9 +105,8 @@ export const useDashboard = () => {
     if (!token.value.trim()) {
       return
     }
-    timer = setInterval(() => {
-      void refresh()
-    }, pollingMs.value)
+    pollingActive = true
+    scheduleNextPoll(sessionId)
   }
 
   const syncFromSettings = (settings: {
@@ -79,13 +126,19 @@ export const useDashboard = () => {
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
+        invalidateInFlightRequests()
         stopPolling()
         snapshot.value = null
         error.value = EMPTY_TOKEN_MESSAGE
         return
       }
 
+      invalidateInFlightRequests()
+      const activeSession = sessionId
       await refresh()
+      if (activeSession !== sessionId || !token.value.trim()) {
+        return
+      }
       startPolling()
     } catch (err) {
       error.value = toErrorMessage(err)
@@ -101,13 +154,19 @@ export const useDashboard = () => {
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
+        invalidateInFlightRequests()
         stopPolling()
         snapshot.value = null
         error.value = EMPTY_TOKEN_MESSAGE
         return
       }
 
+      invalidateInFlightRequests()
+      const activeSession = sessionId
       await refresh()
+      if (activeSession !== sessionId || !token.value.trim()) {
+        return
+      }
       startPolling()
     } catch (err) {
       error.value = toErrorMessage(err)
@@ -137,6 +196,7 @@ export const useDashboard = () => {
 
   onScopeDispose(() => {
     stopPolling()
+    invalidateInFlightRequests()
   })
 
   return {

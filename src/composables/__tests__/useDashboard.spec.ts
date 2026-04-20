@@ -73,6 +73,25 @@ describe('useDashboard', () => {
     scope.stop()
   })
 
+  it('init with token starts polling automatically', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-auto',
+      pollingMs: 5000,
+      alwaysOnTop: false
+    })
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+    await dashboard.init()
+
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(2)
+    scope.stop()
+  })
+
   it('init does not fetch when token is missing', async () => {
     const bridge = createBridgeMock()
     bridge.getSettings.mockResolvedValue({
@@ -184,6 +203,114 @@ describe('useDashboard', () => {
     await dashboard.init()
 
     expect(dashboard.error.value).toContain('network down')
+    scope.stop()
+  })
+
+  it('stops polling on scope dispose', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-stop',
+      pollingMs: 5000,
+      alwaysOnTop: false
+    })
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+    await dashboard.init()
+
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(1)
+    scope.stop()
+
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not restore stale snapshot when in-flight refresh resolves after saveToken empty', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-stale',
+      pollingMs: 60000,
+      alwaysOnTop: false
+    })
+    bridge.saveToken.mockResolvedValue({
+      token: '',
+      pollingMs: 60000,
+      alwaysOnTop: false
+    })
+
+    const staleSnapshot: DashboardSnapshot = {
+      ...snapshotFixture,
+      remainingUsd: 999
+    }
+    const pendingResolverRef: { current: ((value: DashboardSnapshot) => void) | null } = {
+      current: null
+    }
+    bridge.fetchQuotaSnapshot
+      .mockResolvedValueOnce(snapshotFixture)
+      .mockImplementationOnce(
+        () =>
+          new Promise<DashboardSnapshot>(resolve => {
+            pendingResolverRef.current = resolve
+          })
+      )
+
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+
+    await dashboard.init()
+    const pendingRefresh = dashboard.refresh()
+    await Promise.resolve()
+
+    await dashboard.saveToken('')
+    expect(pendingResolverRef.current).not.toBeNull()
+    pendingResolverRef.current!(staleSnapshot)
+    await pendingRefresh
+
+    expect(dashboard.snapshot.value).toBeNull()
+    expect(dashboard.error.value).toContain('Token')
+    scope.stop()
+  })
+
+  it('does not overlap polling requests when previous poll is still in flight', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-no-overlap',
+      pollingMs: 5000,
+      alwaysOnTop: false
+    })
+
+    const pollResolverRef: { current: ((value: DashboardSnapshot) => void) | null } = {
+      current: null
+    }
+    bridge.fetchQuotaSnapshot
+      .mockResolvedValueOnce(snapshotFixture)
+      .mockImplementationOnce(
+        () =>
+          new Promise<DashboardSnapshot>(resolve => {
+            pollResolverRef.current = resolve
+          })
+      )
+      .mockResolvedValue(snapshotFixture)
+
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+    await dashboard.init()
+
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(2)
+
+    await vi.advanceTimersByTimeAsync(20000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(2)
+
+    expect(pollResolverRef.current).not.toBeNull()
+    pollResolverRef.current!(snapshotFixture)
+    await Promise.resolve()
+
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(3)
     scope.stop()
   })
 })
