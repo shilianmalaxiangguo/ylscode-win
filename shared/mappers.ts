@@ -1,4 +1,12 @@
-import type { APIEnvelope, DashboardSnapshot, NumberLike, PackageItem, UsageCardSnapshot, UsagePayload } from './types'
+import type {
+  APIEnvelope,
+  DashboardSnapshot,
+  NumberLike,
+  PackageItem,
+  SnapshotMappingOptions,
+  UsageCardSnapshot,
+  UsagePayload
+} from './types'
 
 const toNumber = (value: NumberLike): number | null => {
   if (value == null || value === '') {
@@ -27,7 +35,7 @@ const toUsageCardSnapshot = (usage: UsagePayload | null | undefined): UsageCardS
     return null
   }
 
-  const usedUsd = totalUsd - remainingUsd
+  const usedUsd = Math.max(0, totalUsd - remainingUsd)
   const usedPercentage = toNumber(usage?.used_percentage)
   const ratio = usedPercentage != null ? clamp01(usedPercentage / 100) : clamp01(usedUsd / totalUsd)
 
@@ -66,12 +74,15 @@ const isActivePackage = (item: PackageItem): boolean => {
   return activeValue === 1
 }
 
-const pickNearestExpiresAt = (packages: PackageItem[] | null | undefined): string | null => {
+const pickNearestExpiresAt = (
+  packages: PackageItem[] | null | undefined,
+  referenceTimeMs: number | null | undefined
+): string | null => {
   if (!packages?.length) {
     return null
   }
 
-  const now = Date.now()
+  const reference = Number.isFinite(referenceTimeMs) ? (referenceTimeMs as number) : 0
   const parseable = packages
     .map(item => {
       const expiresAt = getExpiresAt(item)
@@ -84,19 +95,37 @@ const pickNearestExpiresAt = (packages: PackageItem[] | null | undefined): strin
     .filter(item => item.timestamp != null) as Array<{ expiresAt: string; timestamp: number; active: boolean }>
 
   const activeCurrent = parseable
-    .filter(item => item.active && item.timestamp >= now)
+    .filter(item => item.active && item.timestamp >= reference)
     .sort((left, right) => left.timestamp - right.timestamp)
 
   if (activeCurrent.length > 0) {
     return activeCurrent[0].expiresAt
   }
 
-  const nearest = parseable.sort((left, right) => left.timestamp - right.timestamp)
+  const nearest = parseable.sort((left, right) => {
+    const leftDiff = Math.abs(left.timestamp - reference)
+    const rightDiff = Math.abs(right.timestamp - reference)
+    if (leftDiff !== rightDiff) {
+      return leftDiff - rightDiff
+    }
+
+    const leftIsFuture = left.timestamp >= reference
+    const rightIsFuture = right.timestamp >= reference
+    if (leftIsFuture !== rightIsFuture) {
+      return leftIsFuture ? -1 : 1
+    }
+
+    return left.timestamp - right.timestamp
+  })
   return nearest[0]?.expiresAt ?? null
 }
 
-export const mapApiEnvelopeToDashboardSnapshot = (envelope: APIEnvelope): DashboardSnapshot => {
+export const mapApiEnvelopeToDashboardSnapshot = (
+  envelope: APIEnvelope,
+  options?: SnapshotMappingOptions
+): DashboardSnapshot => {
   const state = envelope.state
+  const referenceTimeMs = toNumber(options?.referenceTimeMs)
 
   return {
     remainingUsd:
@@ -107,6 +136,6 @@ export const mapApiEnvelopeToDashboardSnapshot = (envelope: APIEnvelope): Dashbo
     week: state?.userPackgeUsage_week ? toUsageCardSnapshot(state.userPackgeUsage_week) : null,
     email: state?.user?.email ?? null,
     packageTotalUsd: toNumber(state?.package?.total_quota),
-    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages)
+    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, referenceTimeMs)
   }
 }
