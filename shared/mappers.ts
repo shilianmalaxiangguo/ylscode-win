@@ -59,6 +59,14 @@ const parseTimestamp = (value: string | null): number | null => {
   return Number.isFinite(time) ? time : null
 }
 
+const toReferenceTimeMs = (value: number): number => {
+  const parsed = toNumber(value)
+  if (parsed == null) {
+    throw new Error('referenceTimeMs must be a finite number')
+  }
+  return parsed
+}
+
 const isActivePackage = (item: PackageItem): boolean => {
   const status = (item.package_status ?? '').toLowerCase()
   if (status === 'active') {
@@ -75,13 +83,13 @@ const isActivePackage = (item: PackageItem): boolean => {
 
 const pickNearestExpiresAt = (
   packages: PackageItem[] | null | undefined,
-  referenceTimeMs: number | null | undefined
+  referenceTimeMs: number
 ): string | null => {
   if (!packages?.length) {
     return null
   }
 
-  const reference = Number.isFinite(referenceTimeMs) ? (referenceTimeMs as number) : 0
+  const reference = referenceTimeMs
   const parseable = packages
     .map(item => {
       const expiresAt = getExpiresAt(item)
@@ -124,6 +132,7 @@ export const mapApiEnvelopeToDashboardSnapshot = (
   referenceTimeMs: number
 ): DashboardSnapshot => {
   const state = envelope.state
+  const reference = toReferenceTimeMs(referenceTimeMs)
 
   return {
     remainingUsd:
@@ -134,6 +143,6 @@ export const mapApiEnvelopeToDashboardSnapshot = (
     week: state?.userPackgeUsage_week ? toUsageCardSnapshot(state.userPackgeUsage_week) : null,
     email: state?.user?.email ?? null,
     packageTotalUsd: toNumber(state?.package?.total_quota),
-    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, toNumber(referenceTimeMs))
+    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, reference)
   }
 }
