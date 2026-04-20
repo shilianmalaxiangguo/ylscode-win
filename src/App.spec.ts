@@ -23,7 +23,15 @@ const snapshotFixture: DashboardSnapshot = {
   packageExpiresAt: '2099-01-01T00:00:00.000Z'
 }
 
-const createBridgeMock = () => ({
+type BridgeMock = {
+  getSettings: ReturnType<typeof vi.fn>
+  saveToken: ReturnType<typeof vi.fn>
+  setIntervalMs: ReturnType<typeof vi.fn>
+  setAlwaysOnTop: ReturnType<typeof vi.fn>
+  fetchQuotaSnapshot: ReturnType<typeof vi.fn>
+}
+
+const createBridgeMock = (overrides: Partial<BridgeMock> = {}): BridgeMock => ({
   getSettings: vi.fn().mockResolvedValue({
     token: 'existing-token',
     pollingMs: 60000,
@@ -44,7 +52,8 @@ const createBridgeMock = () => ({
     pollingMs: 60000,
     alwaysOnTop
   })),
-  fetchQuotaSnapshot: vi.fn().mockResolvedValue(snapshotFixture)
+  fetchQuotaSnapshot: vi.fn().mockResolvedValue(snapshotFixture),
+  ...overrides
 })
 
 const flushAsync = async () => {
@@ -52,25 +61,31 @@ const flushAsync = async () => {
   await Promise.resolve()
 }
 
+const mountApp = async (bridge: BridgeMock) => {
+  vi.stubGlobal('window', { ylsDesktop: bridge })
+  const wrapper = mount(App, {
+    global: {
+      plugins: [ui]
+    }
+  })
+  await flushAsync()
+  await flushAsync()
+  return wrapper
+}
+
 describe('App widget UI', () => {
   beforeEach(() => {
-    vi.stubGlobal('window', { ylsDesktop: createBridgeMock() })
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
   it('renders quota, account info and action buttons after init', async () => {
-    const wrapper = mount(App, {
-      global: {
-        plugins: [ui]
-      }
-    })
-
-    await flushAsync()
-    await flushAsync()
+    const wrapper = await mountApp(createBridgeMock())
 
     const text = wrapper.text()
     expect(text).toContain('YLS Code')
@@ -90,5 +105,100 @@ describe('App widget UI', () => {
     expect(text).toContain('3min')
     expect(text).toContain('5min')
     expect(text).toContain('10min')
+  })
+
+  it('shows empty token hint when token is missing', async () => {
+    const bridge = createBridgeMock({
+      getSettings: vi.fn().mockResolvedValue({
+        token: '',
+        pollingMs: 60000,
+        alwaysOnTop: false
+      })
+    })
+    const wrapper = await mountApp(bridge)
+
+    expect(wrapper.text()).toContain('请先配置 Token')
+  })
+
+  it('shows real error instead of empty token hint when init fails', async () => {
+    const bridge = createBridgeMock({
+      getSettings: vi.fn().mockRejectedValue(new Error('settings unavailable'))
+    })
+    const wrapper = await mountApp(bridge)
+
+    const text = wrapper.text()
+    expect(text).toContain('settings unavailable')
+    expect(text).not.toContain('请先配置 Token')
+  })
+
+  it('shows week placeholders when week quota is missing', async () => {
+    const bridge = createBridgeMock({
+      fetchQuotaSnapshot: vi.fn().mockResolvedValue({
+        ...snapshotFixture,
+        week: null
+      })
+    })
+    const wrapper = await mountApp(bridge)
+
+    const text = wrapper.text()
+    expect(text).toContain('本周额度 (USD)')
+    expect(text).toContain('$-- / $--')
+    expect(text).toContain('已用 --')
+  })
+
+  it('keeps settings controls available during refresh and triggers save/interval actions', async () => {
+    let resolveRefresh: (value: DashboardSnapshot) => void = () => {}
+    const pendingRefresh = new Promise<DashboardSnapshot>((resolve) => {
+      resolveRefresh = resolve
+    })
+
+    const bridge = createBridgeMock({
+      fetchQuotaSnapshot: vi
+        .fn()
+        .mockResolvedValueOnce(snapshotFixture)
+        .mockReturnValueOnce(pendingRefresh)
+        .mockResolvedValue(snapshotFixture)
+    })
+
+    const wrapper = await mountApp(bridge)
+    const tokenInput = wrapper.get('#token-input')
+    const intervalSelect = wrapper.get('#polling-select')
+    const refreshButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('刷新'))
+    expect(refreshButton).toBeTruthy()
+
+    refreshButton!.element.click()
+    await flushAsync()
+
+    expect((tokenInput.element as HTMLInputElement).disabled).toBe(false)
+    expect((intervalSelect.element as HTMLSelectElement).disabled).toBe(false)
+    const settingsButtons = Array.from(
+      tokenInput.element.closest('section')?.querySelectorAll('button') ?? []
+    ) as HTMLButtonElement[]
+    expect(settingsButtons.length).toBeGreaterThanOrEqual(2)
+    expect(settingsButtons.every((button) => button.disabled === false)).toBe(true)
+
+    const toggleButton = settingsButtons[0]
+    expect((tokenInput.element as HTMLInputElement).type).toBe('password')
+    await toggleButton.click()
+    await flushAsync()
+    expect((tokenInput.element as HTMLInputElement).type).toBe('text')
+
+    ;(tokenInput.element as HTMLInputElement).value = 'updated-token'
+    tokenInput.element.dispatchEvent(new Event('input'))
+    await flushAsync()
+    const saveButton = settingsButtons[1]
+    await saveButton.click()
+    await flushAsync()
+    expect(bridge.saveToken).toHaveBeenCalledWith('updated-token')
+
+    ;(intervalSelect.element as HTMLSelectElement).value = '300000'
+    intervalSelect.element.dispatchEvent(new Event('change'))
+    await flushAsync()
+    expect(bridge.setIntervalMs).toHaveBeenCalledWith(300000)
+
+    resolveRefresh(snapshotFixture)
+    await flushAsync()
   })
 })

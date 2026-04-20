@@ -5,7 +5,7 @@ const props = defineProps<{
   token: string
   pollingMs: number
   intervalOptions: readonly number[]
-  loading?: boolean
+  busy?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,13 +58,13 @@ function formatPollingLabel(ms: number): string {
           v-model="draftToken"
           :type="showToken ? 'text' : 'password'"
           placeholder="请输入 Token"
-          :disabled="loading"
+          :disabled="busy"
           class="token-input"
         />
         <UButton
           color="neutral"
           variant="soft"
-          :disabled="loading"
+          :disabled="busy"
           @click="showToken = !showToken"
         >
           {{ showToken ? '隐藏' : '显示' }}
@@ -74,12 +74,12 @@ function formatPollingLabel(ms: number): string {
 
     <div class="field">
       <label for="polling-select">轮询间隔</label>
-      <select id="polling-select" :value="pollingMs" :disabled="loading" @change="onChangeInterval">
+      <select id="polling-select" :value="pollingMs" :disabled="busy" @change="onChangeInterval">
         <option v-for="item in intervalItems" :key="item.value" :value="item.value">{{ item.label }}</option>
       </select>
     </div>
 
-    <UButton :loading="loading" block @click="onSaveToken">保存 Token</UButton>
+    <UButton :loading="busy" :disabled="busy" block @click="onSaveToken">保存 Token</UButton>
   </section>
 </template>
 

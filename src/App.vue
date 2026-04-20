@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import HeroBalanceCard from './components/HeroBalanceCard.vue'
 import QuotaUsageCard from './components/QuotaUsageCard.vue'
 import AccountInfoCard from './components/AccountInfoCard.vue'
@@ -7,18 +7,28 @@ import SettingsCard from './components/SettingsCard.vue'
 import { useDashboard } from './composables/useDashboard'
 
 const dashboard = useDashboard()
+const EMPTY_TOKEN_MESSAGE = '请先配置 Token'
+const settingsBusy = ref(false)
 
 const alwaysOnTopLabel = computed(() => (dashboard.alwaysOnTop.value ? '取消置顶' : '置顶'))
-const showTokenEmptyHint = computed(() => !dashboard.token.value.trim())
+const showTokenEmptyHint = computed(() => dashboard.error.value === EMPTY_TOKEN_MESSAGE)
 const readableError = computed(() => {
-  if (!dashboard.error.value || showTokenEmptyHint.value) {
+  if (!dashboard.error.value || dashboard.error.value === EMPTY_TOKEN_MESSAGE) {
     return null
   }
   return dashboard.error.value
 })
 
 const onSaveToken = async (token: string) => {
-  await dashboard.saveToken(token)
+  if (settingsBusy.value) {
+    return
+  }
+  settingsBusy.value = true
+  try {
+    await dashboard.saveToken(token)
+  } finally {
+    settingsBusy.value = false
+  }
 }
 
 const onRefresh = async () => {
@@ -30,7 +40,15 @@ const onToggleAlwaysOnTop = async () => {
 }
 
 const onChangeInterval = async (pollingMs: number) => {
-  await dashboard.changeInterval(pollingMs)
+  if (settingsBusy.value) {
+    return
+  }
+  settingsBusy.value = true
+  try {
+    await dashboard.changeInterval(pollingMs)
+  } finally {
+    settingsBusy.value = false
+  }
 }
 
 onMounted(async () => {
@@ -76,7 +94,7 @@ onMounted(async () => {
         :token="dashboard.token.value"
         :polling-ms="dashboard.pollingMs.value"
         :interval-options="dashboard.intervalOptions"
-        :loading="dashboard.loading.value"
+        :busy="settingsBusy"
         @save-token="onSaveToken"
         @change-interval="onChangeInterval"
       />
