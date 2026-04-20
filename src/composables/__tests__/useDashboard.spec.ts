@@ -385,4 +385,28 @@ describe('useDashboard', () => {
 
     scope.stop()
   })
+
+  it('resumes previous polling when saveToken fails with existing valid token', async () => {
+    const bridge = createBridgeMock()
+    bridge.getSettings.mockResolvedValue({
+      token: 'token-existing',
+      pollingMs: 5000,
+      alwaysOnTop: false
+    })
+    bridge.saveToken.mockRejectedValue(new Error('save failed'))
+    vi.stubGlobal('window', { ylsDesktop: bridge })
+
+    const scope = effectScope()
+    const dashboard = scope.run(() => useDashboard())!
+    await dashboard.init()
+
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(1)
+
+    await dashboard.saveToken('next-token')
+    expect(dashboard.error.value).toContain('save failed')
+
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(bridge.fetchQuotaSnapshot).toHaveBeenCalledTimes(2)
+    scope.stop()
+  })
 })

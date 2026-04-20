@@ -146,6 +146,7 @@ export const useDashboard = () => {
   }
 
   const saveToken = async (nextToken: string) => {
+    const hadValidTokenBefore = token.value.trim().length > 0
     loading.value = true
     invalidateInFlightRequests()
     stopPolling()
@@ -167,6 +168,9 @@ export const useDashboard = () => {
       startPolling()
     } catch (err) {
       error.value = toErrorMessage(err)
+      if (hadValidTokenBefore && token.value.trim()) {
+        startPolling()
+      }
     } finally {
       loading.value = false
     }
