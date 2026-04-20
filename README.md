@@ -29,6 +29,21 @@ This writes Windows x64 artifacts into `release/`:
 - NSIS installer `.exe`
 - Portable `.exe`
 
+## GitHub Actions
+
+Repository workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+- `push` / `pull_request` to `main`: runs `npm ci`, `npm run typecheck`, `npm test`
+- Manual run (`workflow_dispatch`): runs verification first, then builds Windows packages on `windows-latest` and uploads artifacts
+
+Manual run steps on GitHub:
+
+1. Push the workflow file to the default branch.
+2. Open `Actions` in the repository.
+3. Select `CI`.
+4. Click `Run workflow`.
+5. After it finishes, download the artifact named `windows-package-<commit-sha>`.
+
 ## Verification Log (2026-04-20)
 
 This verification log is bound to application code revision `1fa8cc0` (`fix: separate widget errors and settings busy state`). Later README-only edits must not be treated as a fresh product verification.
