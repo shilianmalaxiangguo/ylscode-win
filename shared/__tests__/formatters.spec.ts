@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatPercent, formatUsd } from '../formatters'
+import { formatDate, formatPercent, formatUsd } from '../formatters'
 
 describe('formatUsd', () => {
   it('formats integer USD without decimals', () => {
@@ -24,5 +24,17 @@ describe('formatPercent', () => {
   it('returns placeholder for nullish values', () => {
     expect(formatPercent(null)).toBe('--')
     expect(formatPercent(undefined)).toBe('--')
+  })
+})
+
+describe('formatDate', () => {
+  it('formats ISO date to locale-friendly output', () => {
+    expect(formatDate('2099-01-01T00:00:00.000Z')).toMatch(/2099/)
+  })
+
+  it('returns placeholder for invalid values', () => {
+    expect(formatDate(null)).toBe('--')
+    expect(formatDate(undefined)).toBe('--')
+    expect(formatDate('bad-date')).toBe('--')
   })
 })
