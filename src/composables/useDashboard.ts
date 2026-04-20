@@ -2,8 +2,63 @@ import { onScopeDispose, ref } from 'vue'
 import type { DashboardSnapshot } from '../../shared/types.js'
 
 const EMPTY_TOKEN_MESSAGE = '请先配置 Token'
+const PREVIEW_TOKEN = 'preview-token'
+const createPreviewSnapshot = (): DashboardSnapshot => {
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  return {
+    remainingUsd: 245000,
+    current: {
+      remainingUsd: 380,
+      usedUsd: 120,
+      totalUsd: 500,
+      ratio: 0.24
+    },
+    week: {
+      remainingUsd: 740,
+      usedUsd: 260,
+      totalUsd: 1000,
+      ratio: 0.26
+    },
+    email: 'preview@example.com',
+    packageType: 'max',
+    packageDaysRemaining: 7,
+    packageTotalUsd: 500000,
+    packageExpiresAt: expiresAt
+  }
+}
 
 const intervalOptions = [5000, 30000, 60000, 180000, 300000, 600000] as const
+
+type DesktopBridge = Window['ylsDesktop']
+
+const previewState = {
+  token: PREVIEW_TOKEN,
+  pollingMs: 60000,
+  alwaysOnTop: false
+}
+
+const previewBridge: DesktopBridge = {
+  getSettings: async () => ({ ...previewState }),
+  saveToken: async (token: string) => {
+    previewState.token = token.trim()
+    return { ...previewState }
+  },
+  setIntervalMs: async (pollingMs: number) => {
+    previewState.pollingMs = pollingMs
+    return { ...previewState }
+  },
+  setAlwaysOnTop: async (alwaysOnTop: boolean) => {
+    previewState.alwaysOnTop = alwaysOnTop
+    return { ...previewState }
+  },
+  fetchQuotaSnapshot: async () => {
+    if (!previewState.token) {
+      throw new Error(EMPTY_TOKEN_MESSAGE)
+    }
+    return createPreviewSnapshot()
+  }
+}
 
 const toErrorMessage = (error: unknown): string => {
   if (error instanceof Error && error.message) {
@@ -13,6 +68,11 @@ const toErrorMessage = (error: unknown): string => {
     return error
   }
   return '操作失败，请稍后重试'
+}
+
+const getDesktopBridge = (): DesktopBridge => {
+  const bridge = globalThis.window?.ylsDesktop
+  return bridge ?? previewBridge
 }
 
 export const useDashboard = () => {
@@ -60,7 +120,7 @@ export const useDashboard = () => {
     latestRequestId = requestId
     loading.value = true
     try {
-      const next = await window.ylsDesktop.fetchQuotaSnapshot()
+      const next = await getDesktopBridge().fetchQuotaSnapshot()
       if (requestSessionId !== sessionId || requestId !== latestRequestId) {
         return false
       }
@@ -123,7 +183,7 @@ export const useDashboard = () => {
     invalidateInFlightRequests()
     stopPolling()
     try {
-      const settings = await window.ylsDesktop.getSettings()
+      const settings = await getDesktopBridge().getSettings()
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
@@ -151,7 +211,7 @@ export const useDashboard = () => {
     invalidateInFlightRequests()
     stopPolling()
     try {
-      const settings = await window.ylsDesktop.saveToken(nextToken)
+      const settings = await getDesktopBridge().saveToken(nextToken)
       syncFromSettings(settings)
 
       if (!token.value.trim()) {
@@ -178,7 +238,7 @@ export const useDashboard = () => {
 
   const changeInterval = async (nextPollingMs: number) => {
     try {
-      const settings = await window.ylsDesktop.setIntervalMs(nextPollingMs)
+      const settings = await getDesktopBridge().setIntervalMs(nextPollingMs)
       syncFromSettings(settings)
       startPolling()
     } catch (err) {
@@ -188,7 +248,7 @@ export const useDashboard = () => {
 
   const toggleAlwaysOnTop = async (value: boolean) => {
     try {
-      const settings = await window.ylsDesktop.setAlwaysOnTop(value)
+      const settings = await getDesktopBridge().setAlwaysOnTop(value)
       syncFromSettings(settings)
     } catch (err) {
       error.value = toErrorMessage(err)

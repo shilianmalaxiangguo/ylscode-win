@@ -28,8 +28,8 @@ describe('formatPercent', () => {
 })
 
 describe('formatDate', () => {
-  it('formats ISO date in UTC to avoid local timezone drift', () => {
-    expect(formatDate('2099-01-01T20:00:00.000Z')).toBe('Jan 01, 2099')
+  it('formats ISO date in UTC timestamp text', () => {
+    expect(formatDate('2099-01-01T20:00:00.000Z')).toBe('2099-01-01 20:00:00')
   })
 
   it('returns placeholder for invalid values', () => {

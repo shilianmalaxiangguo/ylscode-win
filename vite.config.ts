@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import ui from '@nuxt/ui/vite'
 
 export default defineConfig({
+  base: './',
   server: {
     host: '127.0.0.1',
     port: 5173,

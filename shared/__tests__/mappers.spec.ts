@@ -45,6 +45,8 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
         ratio: 0.26
       },
       email: 'user@example.com',
+      packageType: null,
+      packageDaysRemaining: 10,
       packageTotalUsd: 3000,
       packageExpiresAt: '2026-04-30T00:00:00.000Z'
     })
@@ -193,6 +195,8 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       current: null,
       week: null,
       email: null,
+      packageType: null,
+      packageDaysRemaining: null,
       packageTotalUsd: null,
       packageExpiresAt: null
     })

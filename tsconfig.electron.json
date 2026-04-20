@@ -7,7 +7,7 @@
   },
   "include": [
     "electron/main.ts",
-    "electron/preload.ts",
+    "electron/preload.cts",
     "electron/ipc.ts",
     "electron/store.ts",
     "electron/quota-service.ts",

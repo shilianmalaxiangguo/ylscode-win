@@ -19,6 +19,8 @@ const snapshotFixture: DashboardSnapshot = {
     ratio: 0.4
   },
   email: 'tester@example.com',
+  packageType: 'max',
+  packageDaysRemaining: 7,
   packageTotalUsd: 1000,
   packageExpiresAt: '2099-01-01T00:00:00.000Z'
 }
@@ -76,6 +78,7 @@ const mountApp = async (bridge: BridgeMock) => {
 describe('App widget UI', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    vi.setSystemTime(new Date('2098-12-25T00:00:00.000Z'))
   })
 
   afterEach(() => {
@@ -88,17 +91,18 @@ describe('App widget UI', () => {
     const wrapper = await mountApp(createBridgeMock())
 
     const text = wrapper.text()
-    expect(text).toContain('YLS Code')
-    expect(text).toContain('剩余额度 (USD)')
-    expect(text).toContain('$102.50')
+    expect(text).toContain('伊莉思Code')
     expect(text).toContain('当前额度 (USD)')
-    expect(text).toContain('$47.50 / $150')
+    expect(text).toContain('$47.50/ $150')
     expect(text).toContain('本周额度 (USD)')
-    expect(text).toContain('$40 / $100')
+    expect(text).toContain('$40/ $100')
+    expect(text).toContain('Max')
     expect(text).toContain('tester@example.com')
-    expect(text).toContain('$1,000')
+    expect(text).toContain('剩余 7 天')
+    expect(text).not.toContain('$150/天')
     expect(text).toContain('置顶')
     expect(text).toContain('刷新')
+    expect(text).not.toContain('剩余额度 (USD)')
     expect(text).toContain('5s')
     expect(text).toContain('30s')
     expect(text).toContain('60s')
@@ -142,8 +146,8 @@ describe('App widget UI', () => {
 
     const text = wrapper.text()
     expect(text).toContain('本周额度 (USD)')
-    expect(text).toContain('$-- / $--')
-    expect(text).toContain('已用 --')
+    expect(text).toContain('$--/ $--')
+    expect(text).toContain('已用额度')
   })
 
   it('keeps settings controls available during refresh and triggers save/interval actions', async () => {
@@ -200,5 +204,41 @@ describe('App widget UI', () => {
 
     resolveRefresh(snapshotFixture)
     await flushAsync()
+  })
+
+  it('renders preview data when electron bridge is unavailable in plain web mode', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [ui]
+      }
+    })
+
+    await flushAsync()
+    await flushAsync()
+
+    const text = wrapper.text()
+    expect(text).toContain('伊莉思Code')
+    expect(text).toContain('当前额度 (USD)')
+    expect(text).toContain('$120/ $500')
+    expect(text).toContain('Max')
+    expect(text).toContain('preview@example.com')
+    expect(text).not.toContain('$500/天')
+    expect(text).not.toContain("Cannot read properties of undefined")
+  })
+
+  it('infers Max plan when package_type is missing but daily quota is 200 or more', async () => {
+    const bridge = createBridgeMock({
+      fetchQuotaSnapshot: vi.fn().mockResolvedValue({
+        ...snapshotFixture,
+        packageType: null,
+        current: {
+          ...snapshotFixture.current!,
+          totalUsd: 240
+        }
+      })
+    })
+    const wrapper = await mountApp(bridge)
+
+    expect(wrapper.text()).toContain('Max')
   })
 })

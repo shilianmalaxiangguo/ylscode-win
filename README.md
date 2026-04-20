@@ -17,6 +17,18 @@ npm run typecheck
 npm run build
 ```
 
+## Package Windows x64 EXE
+
+```powershell
+npm install
+npm run dist:win
+```
+
+This writes Windows x64 artifacts into `release/`:
+
+- NSIS installer `.exe`
+- Portable `.exe`
+
 ## Verification Log (2026-04-20)
 
 This verification log is bound to application code revision `1fa8cc0` (`fix: separate widget errors and settings busy state`). Later README-only edits must not be treated as a fresh product verification.

@@ -2,7 +2,17 @@
 @import "@nuxt/ui";
 
 :root {
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ui-primary: #00c16a;
+  --widget-accent: #00c16a;
+  --widget-accent-strong: #009f57;
+  --widget-accent-soft: rgba(0, 193, 106, 0.16);
+  --widget-accent-mist: rgba(0, 193, 106, 0.08);
+  --widget-text-strong: #0b1f16;
+  --widget-text-soft: #476457;
+  --widget-border: rgba(0, 193, 106, 0.14);
+  --widget-panel: rgba(251, 255, 252, 0.8);
+  --widget-panel-strong: rgba(255, 255, 255, 0.9);
+  font-family: "Segoe UI Variable", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 html,
@@ -13,6 +23,35 @@ body,
 }
 
 body {
-  background: #f6f8fa;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 193, 106, 0.2), transparent 32%),
+    radial-gradient(circle at 100% 100%, rgba(0, 159, 87, 0.16), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 48%),
+    #f6fbf8;
   color: #111827;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 193, 106, 0.26) rgba(0, 193, 106, 0.06);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 193, 106, 0.06);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(36, 199, 111, 0.42), rgba(19, 168, 97, 0.42));
+  border-radius: 999px;
+  border: 2px solid rgba(246, 251, 248, 0.96);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(36, 199, 111, 0.56), rgba(19, 168, 97, 0.56));
 }

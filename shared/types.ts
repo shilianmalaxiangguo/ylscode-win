@@ -8,6 +8,7 @@ export interface UsagePayload {
 
 export interface PackageItem {
   package_status?: string | null
+  package_type?: string | null
   is_active?: boolean | NumberLike
   expires_at?: string | null
   expire_at?: string | null
@@ -43,6 +44,8 @@ export interface DashboardSnapshot {
   current: UsageCardSnapshot | null
   week: UsageCardSnapshot | null
   email: string | null
+  packageType: string | null
+  packageDaysRemaining: number | null
   packageTotalUsd: number | null
   packageExpiresAt: string | null
 }

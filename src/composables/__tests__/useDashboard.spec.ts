@@ -13,6 +13,8 @@ const snapshotFixture: DashboardSnapshot = {
   },
   week: null,
   email: 'user@example.com',
+  packageType: 'max',
+  packageDaysRemaining: 30,
   packageTotalUsd: 100,
   packageExpiresAt: '2099-01-01T00:00:00.000Z'
 }

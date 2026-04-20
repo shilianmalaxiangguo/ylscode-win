@@ -81,12 +81,12 @@ const isActivePackage = (item: PackageItem): boolean => {
   return activeValue === 1
 }
 
-const pickNearestExpiresAt = (
+const pickDisplayPackage = (
   packages: PackageItem[] | null | undefined,
   referenceTimeMs: number
-): string | null => {
+): { item: PackageItem | null; expiresAt: string | null; timestamp: number | null } => {
   if (!packages?.length) {
-    return null
+    return { item: null, expiresAt: null, timestamp: null }
   }
 
   const reference = referenceTimeMs
@@ -94,19 +94,21 @@ const pickNearestExpiresAt = (
     .map(item => {
       const expiresAt = getExpiresAt(item)
       return {
+        item,
         expiresAt,
         timestamp: parseTimestamp(expiresAt),
         active: isActivePackage(item)
       }
     })
-    .filter(item => item.timestamp != null) as Array<{ expiresAt: string; timestamp: number; active: boolean }>
+    .filter(item => item.timestamp != null) as Array<{ item: PackageItem; expiresAt: string; timestamp: number; active: boolean }>
 
   const activeCurrent = parseable
     .filter(item => item.active && item.timestamp >= reference)
     .sort((left, right) => left.timestamp - right.timestamp)
 
   if (activeCurrent.length > 0) {
-    return activeCurrent[0].expiresAt
+    const selected = activeCurrent[0]
+    return { item: selected.item, expiresAt: selected.expiresAt, timestamp: selected.timestamp }
   }
 
   const nearest = parseable.sort((left, right) => {
@@ -124,7 +126,34 @@ const pickNearestExpiresAt = (
 
     return left.timestamp - right.timestamp
   })
-  return nearest[0]?.expiresAt ?? null
+  const selected = nearest[0]
+  return {
+    item: selected?.item ?? null,
+    expiresAt: selected?.expiresAt ?? null,
+    timestamp: selected?.timestamp ?? null
+  }
+}
+
+const resolvePackageDaysRemaining = (timestamp: number | null, referenceTimeMs: number): number | null => {
+  if (timestamp == null) {
+    return null
+  }
+
+  const millisecondsPerDay = 24 * 60 * 60 * 1000
+  const referenceDate = new Date(referenceTimeMs)
+  const targetDate = new Date(timestamp)
+  const referenceStart = Date.UTC(
+    referenceDate.getUTCFullYear(),
+    referenceDate.getUTCMonth(),
+    referenceDate.getUTCDate()
+  )
+  const targetStart = Date.UTC(
+    targetDate.getUTCFullYear(),
+    targetDate.getUTCMonth(),
+    targetDate.getUTCDate()
+  )
+
+  return Math.max(0, Math.floor((targetStart - referenceStart) / millisecondsPerDay))
 }
 
 export const mapApiEnvelopeToDashboardSnapshot = (
@@ -133,6 +162,7 @@ export const mapApiEnvelopeToDashboardSnapshot = (
 ): DashboardSnapshot => {
   const state = envelope.state
   const reference = toReferenceTimeMs(referenceTimeMs)
+  const selectedPackage = pickDisplayPackage(state?.package?.packages, reference)
 
   return {
     remainingUsd:
@@ -142,7 +172,9 @@ export const mapApiEnvelopeToDashboardSnapshot = (
     current: toUsageCardSnapshot(state?.userPackgeUsage),
     week: state?.userPackgeUsage_week ? toUsageCardSnapshot(state.userPackgeUsage_week) : null,
     email: state?.user?.email ?? null,
+    packageType: selectedPackage.item?.package_type ?? null,
+    packageDaysRemaining: resolvePackageDaysRemaining(selectedPackage.timestamp, reference),
     packageTotalUsd: toNumber(state?.package?.total_quota),
-    packageExpiresAt: pickNearestExpiresAt(state?.package?.packages, reference)
+    packageExpiresAt: selectedPackage.expiresAt
   }
 }
