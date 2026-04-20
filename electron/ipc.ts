@@ -26,6 +26,30 @@ export const IPC_CHANNELS = {
   quotaFetch: 'quota:fetch'
 } as const
 
+const isValidPollingMs = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value > 0
+
+const assertTokenInput = (token: unknown): string => {
+  if (typeof token !== 'string') {
+    throw new TypeError('token must be a string')
+  }
+  return token
+}
+
+const assertPollingMsInput = (pollingMs: unknown): number => {
+  if (!isValidPollingMs(pollingMs)) {
+    throw new TypeError('pollingMs must be a finite positive integer')
+  }
+  return pollingMs
+}
+
+const assertAlwaysOnTopInput = (alwaysOnTop: unknown): boolean => {
+  if (typeof alwaysOnTop !== 'boolean') {
+    throw new TypeError('alwaysOnTop must be a boolean')
+  }
+  return alwaysOnTop
+}
+
 export const registerIpcHandlers = ({
   ipcMain,
   settingsStore,
@@ -34,17 +58,18 @@ export const registerIpcHandlers = ({
 }: RegisterIpcHandlersOptions): void => {
   ipcMain.handle(IPC_CHANNELS.settingsGet, async () => settingsStore.getSettings())
 
-  ipcMain.handle(IPC_CHANNELS.settingsSaveToken, async (_event, token: string) => {
-    return settingsStore.saveToken(token)
+  ipcMain.handle(IPC_CHANNELS.settingsSaveToken, async (_event, token: unknown) => {
+    return settingsStore.saveToken(assertTokenInput(token))
   })
 
-  ipcMain.handle(IPC_CHANNELS.settingsSetInterval, async (_event, pollingMs: number) => {
-    return settingsStore.setIntervalMs(pollingMs)
+  ipcMain.handle(IPC_CHANNELS.settingsSetInterval, async (_event, pollingMs: unknown) => {
+    return settingsStore.setIntervalMs(assertPollingMsInput(pollingMs))
   })
 
-  ipcMain.handle(IPC_CHANNELS.settingsSetAlwaysOnTop, async (_event, alwaysOnTop: boolean) => {
-    const settings = await settingsStore.setAlwaysOnTop(alwaysOnTop)
-    getMainWindow()?.setAlwaysOnTop(alwaysOnTop)
+  ipcMain.handle(IPC_CHANNELS.settingsSetAlwaysOnTop, async (_event, alwaysOnTop: unknown) => {
+    const normalized = assertAlwaysOnTopInput(alwaysOnTop)
+    const settings = await settingsStore.setAlwaysOnTop(normalized)
+    getMainWindow()?.setAlwaysOnTop(normalized)
     return settings
   })
 

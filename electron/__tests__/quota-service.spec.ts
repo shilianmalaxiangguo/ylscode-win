@@ -57,4 +57,25 @@ describe('quota service', () => {
       packageExpiresAt: '2026-04-21T00:00:00.000Z'
     })
   })
+
+  it('throws on non-2xx response', async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ message: 'unauthorized' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' }
+      })
+    )
+    const service = createQuotaService({ fetchImpl })
+
+    await expect(service.fetchQuotaSnapshot('token')).rejects.toThrow('quota fetch failed: 401')
+  })
+
+  it('propagates fetch rejection', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error('network down')
+    })
+    const service = createQuotaService({ fetchImpl })
+
+    await expect(service.fetchQuotaSnapshot('token')).rejects.toThrow('network down')
+  })
 })

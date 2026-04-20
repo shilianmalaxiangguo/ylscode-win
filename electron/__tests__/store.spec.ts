@@ -32,7 +32,7 @@ describe('settings store', () => {
     const settingsPath = await createTmpSettingsPath()
     const store = createSettingsStore(settingsPath)
 
-    await store.saveToken('abc-token')
+    await store.saveToken('  abc-token  ')
     await store.setIntervalMs(15000)
     await store.setAlwaysOnTop(true)
 
@@ -44,5 +44,35 @@ describe('settings store', () => {
       pollingMs: 15000,
       alwaysOnTop: true
     })
+  })
+
+  it('self-heals corrupted settings file by returning defaults and rewriting file', async () => {
+    const settingsPath = await createTmpSettingsPath()
+    await fs.writeFile(settingsPath, '{invalid-json', 'utf8')
+    const store = createSettingsStore(settingsPath)
+
+    await expect(store.getSettings()).resolves.toEqual(DEFAULT_SETTINGS)
+
+    const rewritten = await fs.readFile(settingsPath, 'utf8')
+    expect(JSON.parse(rewritten)).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('rejects invalid pollingMs and does not persist bad value', async () => {
+    const settingsPath = await createTmpSettingsPath()
+    const store = createSettingsStore(settingsPath)
+
+    await expect(store.setIntervalMs(0 as unknown as number)).rejects.toThrow()
+    await expect(store.setIntervalMs(Number.NaN)).rejects.toThrow()
+
+    await expect(store.getSettings()).resolves.toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('rejects non-boolean alwaysOnTop and does not persist bad value', async () => {
+    const settingsPath = await createTmpSettingsPath()
+    const store = createSettingsStore(settingsPath)
+
+    await expect(store.setAlwaysOnTop('yes' as unknown as boolean)).rejects.toThrow()
+
+    await expect(store.getSettings()).resolves.toEqual(DEFAULT_SETTINGS)
   })
 })
