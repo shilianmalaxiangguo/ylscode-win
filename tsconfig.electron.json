@@ -2,8 +2,17 @@
   "extends": "./tsconfig.node.json",
   "compilerOptions": {
     "outDir": "dist-electron",
-    "rootDir": "electron",
+    "rootDir": ".",
     "types": ["node", "electron"]
   },
-  "include": ["electron/**/*.ts"]
+  "include": [
+    "electron/main.ts",
+    "electron/preload.ts",
+    "electron/ipc.ts",
+    "electron/store.ts",
+    "electron/quota-service.ts",
+    "shared/mappers.ts",
+    "shared/types.ts"
+  ],
+  "exclude": ["electron/__tests__/**", "shared/__tests__/**"]
 }

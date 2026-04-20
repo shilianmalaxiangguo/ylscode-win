@@ -5,7 +5,7 @@ import type {
   PackageItem,
   UsageCardSnapshot,
   UsagePayload
-} from './types'
+} from './types.js'
 
 const toNumber = (value: NumberLike): number | null => {
   if (value == null || value === '') {
