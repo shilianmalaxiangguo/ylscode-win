@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatPercent, formatUsd } from '../formatters'
+import {
+  formatCompactCount,
+  formatDate,
+  formatInteger,
+  formatPercent,
+  formatUsd
+} from '../formatters'
 
 describe('formatUsd', () => {
   it('formats integer USD without decimals', () => {
@@ -36,5 +42,31 @@ describe('formatDate', () => {
     expect(formatDate(null)).toBe('--')
     expect(formatDate(undefined)).toBe('--')
     expect(formatDate('bad-date')).toBe('--')
+  })
+})
+
+describe('formatCompactCount', () => {
+  it('formats token counts using compact K and M notation', () => {
+    expect(formatCompactCount(54321)).toBe('54.3K')
+    expect(formatCompactCount(3214567)).toBe('3.2M')
+    expect(formatCompactCount(2987654)).toBe('3M')
+  })
+
+  it('returns placeholder for invalid values', () => {
+    expect(formatCompactCount(null)).toBe('--')
+    expect(formatCompactCount(undefined)).toBe('--')
+    expect(formatCompactCount(Number.NaN)).toBe('--')
+  })
+})
+
+describe('formatInteger', () => {
+  it('formats integers with separators', () => {
+    expect(formatInteger(2085)).toBe('2,085')
+  })
+
+  it('returns placeholder for invalid values', () => {
+    expect(formatInteger(null)).toBe('--')
+    expect(formatInteger(undefined)).toBe('--')
+    expect(formatInteger(Number.NaN)).toBe('--')
   })
 })

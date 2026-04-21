@@ -4,7 +4,7 @@ import ui from '@nuxt/ui/vue-plugin'
 import App from './App.vue'
 import type { DashboardSnapshot } from '../shared/types.js'
 
-const snapshotFixture: DashboardSnapshot = {
+const snapshotFixture = {
   remainingUsd: 102.5,
   current: {
     remainingUsd: 102.5,
@@ -22,8 +22,14 @@ const snapshotFixture: DashboardSnapshot = {
   packageType: 'max',
   packageDaysRemaining: 7,
   packageTotalUsd: 1000,
-  packageExpiresAt: '2099-01-01T00:00:00.000Z'
-}
+  packageExpiresAt: '2099-01-01T00:00:00.000Z',
+  todayUsage: {
+    requestCount: 128,
+    inputTokens: 3214567,
+    cachedInputTokens: 2987654,
+    outputTokens: 54321
+  }
+} as DashboardSnapshot
 
 type BridgeMock = {
   getSettings: ReturnType<typeof vi.fn>
@@ -240,5 +246,16 @@ describe('App widget UI', () => {
     const wrapper = await mountApp(bridge)
 
     expect(wrapper.text()).toContain('Max')
+  })
+
+  it('renders the today usage card with compact token values', async () => {
+    const wrapper = await mountApp(createBridgeMock())
+
+    const card = wrapper.get('.today-usage-card')
+    const text = card.text()
+    expect(text).toContain('128')
+    expect(text).toContain('3.2M')
+    expect(text).toContain('3M')
+    expect(text).toContain('54.3K')
   })
 })

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import QuotaUsageCard from './components/QuotaUsageCard.vue'
 import SettingsCard from './components/SettingsCard.vue'
+import TodayUsageCard from './components/TodayUsageCard.vue'
 import { useDashboard } from './composables/useDashboard'
 
 const dashboard = useDashboard()
@@ -123,6 +124,8 @@ onMounted(async () => {
         <QuotaUsageCard title="当前额度 (USD)" :usage="dashboard.snapshot.value?.current ?? null" />
         <QuotaUsageCard title="本周额度 (USD)" :usage="dashboard.snapshot.value?.week ?? null" />
       </section>
+
+      <TodayUsageCard :usage="dashboard.snapshot.value?.todayUsage ?? null" />
 
         <SettingsCard
           :token="dashboard.token.value"

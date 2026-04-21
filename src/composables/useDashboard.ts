@@ -20,6 +20,12 @@ const createPreviewSnapshot = (): DashboardSnapshot => {
       totalUsd: 1000,
       ratio: 0.26
     },
+    todayUsage: {
+      requestCount: 128,
+      inputTokens: 3214567,
+      cachedInputTokens: 2987654,
+      outputTokens: 54321
+    },
     email: 'preview@example.com',
     packageType: 'max',
     packageDaysRemaining: 7,

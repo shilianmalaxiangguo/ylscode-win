@@ -12,6 +12,12 @@ const snapshotFixture: DashboardSnapshot = {
     ratio: 0.375
   },
   week: null,
+  todayUsage: {
+    requestCount: 128,
+    inputTokens: 3214567,
+    cachedInputTokens: 2987654,
+    outputTokens: 54321
+  },
   email: 'user@example.com',
   packageType: 'max',
   packageDaysRemaining: 30,

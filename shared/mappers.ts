@@ -3,6 +3,7 @@ import type {
   DashboardSnapshot,
   NumberLike,
   PackageItem,
+  TodayUsageSnapshot,
   UsageCardSnapshot,
   UsagePayload
 } from './types.js'
@@ -43,6 +44,19 @@ const toUsageCardSnapshot = (usage: UsagePayload | null | undefined): UsageCardS
     usedUsd,
     totalUsd,
     ratio
+  }
+}
+
+const toTodayUsageSnapshot = (usage: UsagePayload | null | undefined): TodayUsageSnapshot | null => {
+  if (!usage) {
+    return null
+  }
+
+  return {
+    requestCount: toNumber(usage.request_count),
+    inputTokens: toNumber(usage.input_tokens),
+    cachedInputTokens: toNumber(usage.input_tokens_cached),
+    outputTokens: toNumber(usage.output_tokens)
   }
 }
 
@@ -171,6 +185,7 @@ export const mapApiEnvelopeToDashboardSnapshot = (
       toNumber(state?.userPackgeUsage_week?.remaining_quota),
     current: toUsageCardSnapshot(state?.userPackgeUsage),
     week: state?.userPackgeUsage_week ? toUsageCardSnapshot(state.userPackgeUsage_week) : null,
+    todayUsage: toTodayUsageSnapshot(state?.userPackgeUsage),
     email: state?.user?.email ?? null,
     packageType: selectedPackage.item?.package_type ?? null,
     packageDaysRemaining: resolvePackageDaysRemaining(selectedPackage.timestamp, reference),

@@ -6,14 +6,18 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
   const referenceTimeMs = Date.parse('2026-04-20T00:00:00.000Z')
 
   it('maps full payload and parses string numbers', () => {
-    const envelope: APIEnvelope = {
+    const envelope = {
       state: {
         remaining_quota: '245000',
         user: { email: 'user@example.com' },
         userPackgeUsage: {
           remaining_quota: '380',
           total_quota: '500',
-          used_percentage: '24'
+          used_percentage: '24',
+          request_count: 128,
+          input_tokens: '3214567',
+          input_tokens_cached: '2987654',
+          output_tokens: '54321'
         },
         userPackgeUsage_week: {
           remaining_quota: '740',
@@ -43,6 +47,12 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
         usedUsd: 260,
         totalUsd: 1000,
         ratio: 0.26
+      },
+      todayUsage: {
+        requestCount: 128,
+        inputTokens: 3214567,
+        cachedInputTokens: 2987654,
+        outputTokens: 54321
       },
       email: 'user@example.com',
       packageType: null,
@@ -194,6 +204,7 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
       remainingUsd: null,
       current: null,
       week: null,
+      todayUsage: null,
       email: null,
       packageType: null,
       packageDaysRemaining: null,

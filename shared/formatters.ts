@@ -38,3 +38,40 @@ export const formatDate = (value: string | null | undefined): string => {
 
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
+
+export const formatCompactCount = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) {
+    return '--'
+  }
+
+  const absValue = Math.abs(value)
+  if (absValue < 1000) {
+    return formatInteger(value)
+  }
+
+  const units = [
+    { threshold: 1_000_000_000, suffix: 'B' },
+    { threshold: 1_000_000, suffix: 'M' },
+    { threshold: 1_000, suffix: 'K' }
+  ]
+
+  const unit = units.find((item) => absValue >= item.threshold)
+  if (!unit) {
+    return formatInteger(value)
+  }
+
+  const scaled = value / unit.threshold
+  const rounded = Math.round(scaled * 10) / 10
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+  return `${text}${unit.suffix}`
+}
+
+export const formatInteger = (value: number | null | undefined): string => {
+  if (value == null || Number.isNaN(value)) {
+    return '--'
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 0
+  }).format(value)
+}
