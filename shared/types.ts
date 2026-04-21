@@ -4,6 +4,7 @@ export interface UsagePayload {
   remaining_quota?: NumberLike
   used_percentage?: NumberLike
   total_quota?: NumberLike
+  total_tokens?: NumberLike
   request_count?: NumberLike
   input_tokens?: NumberLike
   input_tokens_cached?: NumberLike
@@ -44,10 +45,10 @@ export interface UsageCardSnapshot {
 }
 
 export interface TodayUsageSnapshot {
+  totalTokens: number | null
   requestCount: number | null
   inputTokens: number | null
   cachedInputTokens: number | null
-  outputTokens: number | null
 }
 
 export interface DashboardSnapshot {

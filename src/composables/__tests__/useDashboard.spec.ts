@@ -13,10 +13,10 @@ const snapshotFixture: DashboardSnapshot = {
   },
   week: null,
   todayUsage: {
+    totalTokens: 6206542,
     requestCount: 128,
     inputTokens: 3214567,
-    cachedInputTokens: 2987654,
-    outputTokens: 54321
+    cachedInputTokens: 2987654
   },
   email: 'user@example.com',
   packageType: 'max',

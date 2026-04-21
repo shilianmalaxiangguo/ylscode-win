@@ -53,10 +53,10 @@ const toTodayUsageSnapshot = (usage: UsagePayload | null | undefined): TodayUsag
   }
 
   return {
+    totalTokens: toNumber(usage.total_tokens),
     requestCount: toNumber(usage.request_count),
     inputTokens: toNumber(usage.input_tokens),
-    cachedInputTokens: toNumber(usage.input_tokens_cached),
-    outputTokens: toNumber(usage.output_tokens)
+    cachedInputTokens: toNumber(usage.input_tokens_cached)
   }
 }
 

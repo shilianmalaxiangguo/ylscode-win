@@ -14,10 +14,10 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
           remaining_quota: '380',
           total_quota: '500',
           used_percentage: '24',
+          total_tokens: '6206542',
           request_count: 128,
           input_tokens: '3214567',
-          input_tokens_cached: '2987654',
-          output_tokens: '54321'
+          input_tokens_cached: '2987654'
         },
         userPackgeUsage_week: {
           remaining_quota: '740',
@@ -49,10 +49,10 @@ describe('mapApiEnvelopeToDashboardSnapshot', () => {
         ratio: 0.26
       },
       todayUsage: {
+        totalTokens: 6206542,
         requestCount: 128,
         inputTokens: 3214567,
-        cachedInputTokens: 2987654,
-        outputTokens: 54321
+        cachedInputTokens: 2987654
       },
       email: 'user@example.com',
       packageType: null,

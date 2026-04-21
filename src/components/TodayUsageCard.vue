@@ -9,6 +9,10 @@ const props = defineProps<{
 
 const items = computed(() => [
   {
+    label: '总 Token',
+    value: formatCompactCount(props.usage?.totalTokens)
+  },
+  {
     label: '请求次数',
     value: formatInteger(props.usage?.requestCount)
   },
@@ -19,10 +23,6 @@ const items = computed(() => [
   {
     label: '缓存 Token',
     value: formatCompactCount(props.usage?.cachedInputTokens)
-  },
-  {
-    label: '输出 Token',
-    value: formatCompactCount(props.usage?.outputTokens)
   }
 ])
 </script>
@@ -80,7 +80,7 @@ h2 {
 .metric-grid {
   margin-top: 16px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -105,15 +105,17 @@ h2 {
   color: #123222;
 }
 
-@media (max-width: 900px) {
-  .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 560px) {
-  .metric-grid {
-    grid-template-columns: 1fr;
+  .card {
+    padding: 16px;
+  }
+
+  .metric-item {
+    padding: 11px;
+  }
+
+  .metric-value {
+    font-size: 18px;
   }
 }
 </style>
